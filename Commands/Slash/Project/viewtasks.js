@@ -29,7 +29,8 @@ export default {
   run: async ({ client, interaction }) => {
     const department = interaction.options.getString("department")
     // parse camel case to title case and add space if needed
-    const departmentTitle = department ? department.charAt(0).toUpperCase() + department.slice(1) : null;
+    const departmentId = department ? settings.departments[department].roleId : null;
+    const departmentTitle = department ? department.charAt(0).toUpperCase() + department.slice(1).replace(/([A-Z])/g, ' $1').trim() : null;
 
     if (!department) {
       const tasks = await taskModel.find({ guildID: interaction.guild.id });
@@ -41,10 +42,10 @@ export default {
           .setTitle("Tasks")
           .addFields(
             // organize by department
-            Object.entries(settings.departments).map(([key, _]) => ({
+            Object.entries(settings.departments).map(([key, value]) => ({
               // format the key to title case and add space if needed
-              name: key.charAt(0).toUpperCase() + key.slice(1),
-              value: tasks.filter((task) => task.department === key).map((task) => `🚨 **${task.task}** due *${moment(task.dueDate).fromNow()
+              name: key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1').trim(),
+              value: tasks.filter((task) => task.department === value.roleId).map((task) => `🚨 **${task.task}** due *${moment(task.dueDate).fromNow()
                 }* `).join("\n") || "No tasks",
             }))
           )
@@ -56,9 +57,9 @@ export default {
       }
     }
     else {
-      const tasks = await taskModel.find({ guildID: interaction.guild.id, department });
+      const tasks = await taskModel.find({ guildID: interaction.guild.id, department: departmentId });
       if (!tasks.length) {
-        return interaction.reply(`No tasks found for ${departmentTitle}.`);
+        return interaction.reply(`No tasks found for <@&${departmentId}>.`);
       }
       else {
         const embed = new EmbedBuilder()
@@ -66,7 +67,7 @@ export default {
           .addFields(
             tasks.map((task) => ({
               name: task.task,
-              value: `Due *${moment(task.dueDate).fromNow()}*`,
+              value: `🚨 Due *${moment(task.dueDate).fromNow()}*`,
             }))
           )
           .setColor("Random");

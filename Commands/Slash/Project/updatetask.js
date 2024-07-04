@@ -29,7 +29,8 @@ export default {
   run: async ({ client, interaction }) => {
     const department = interaction.options.getString("department");
     const departmentTitle = department.charAt(0).toUpperCase() + department.slice(1);
-    const tasks = await taskModel.find({ guildID: interaction.guild.id, department });
+    const departmentId = settings.departments[department].roleId;
+    const tasks = await taskModel.find({ guildID: interaction.guild.id, department: departmentId });
     if (!tasks.length) {
       return interaction.reply(`No tasks found for ${department}.`);
     }
@@ -43,7 +44,7 @@ export default {
 
     const selectionRow = new ActionRowBuilder().addComponents(selectMenu);
 
-    // first stage actions
+    // first stage
     const updateTaskBtn = new ButtonBuilder()
       .setCustomId("updateTask")
       .setLabel("Update Task")
@@ -70,19 +71,32 @@ export default {
     const updateTaskDueDate = new ButtonBuilder()
       .setCustomId("updateTaskDueDate")
       .setLabel("Update Task Due Date")
-      .setStyle(ButtonStyle.Secondary)
+      .setStyle(ButtonStyle.Primary)
 
     const updateTaskStatus = new ButtonBuilder()
       .setCustomId("updateTaskStatus")
       .setLabel("Update Task Status")
-      .setStyle(ButtonStyle.Secondary)
+      .setStyle(ButtonStyle.Primary)
 
     const updateTaskPercentage = new ButtonBuilder()
       .setCustomId("updateTaskPercentage")
       .setLabel("Update Task Percentage")
-      .setStyle(ButtonStyle.Secondary)
+      .setStyle(ButtonStyle.Primary)
 
     const updateTaskRow = new ActionRowBuilder().addComponents(updateTaskName, updateTaskDueDate, updateTaskStatus, updateTaskPercentage);
+
+    // delete task actions
+    const confirmDeleteBtn = new ButtonBuilder()
+      .setCustomId("confirmDelete")
+      .setLabel("Confirm Delete")
+      .setStyle(ButtonStyle.Danger)
+
+    const cancelDeleteBtn = new ButtonBuilder()
+      .setCustomId("cancelDelete")
+      .setLabel("Cancel Delete")
+      .setStyle(ButtonStyle.Secondary)
+
+    const deleteTaskRow = new ActionRowBuilder().addComponents(confirmDeleteBtn, cancelDeleteBtn);
 
     await interaction.reply({
       components: [selectionRow],
@@ -91,8 +105,11 @@ export default {
     const filter = (i) => i.customId === "task" && i.user.id === interaction.user.id; // filter for the select menu
     const collector = interaction.channel.createMessageComponentCollector({ filter, time: 10_000 }); // 10 seconds
 
+    let taskIndex;
+
     collector.on("collect", async (i) => {
       const task = tasks[parseInt(i.values[0])];
+      taskIndex = parseInt(i.values[0]);
       const embed = new EmbedBuilder()
         .setTitle(`Update ${departmentTitle} Task`)
         .addFields(
@@ -110,9 +127,10 @@ export default {
 
     collector.on("end", async (collected) => {
       if (!collected.size) {
-        await interaction.editReply("No task selected.");
+        await interaction.editReply({ content: "No task selected. Cancelling...", components: [], embeds: [] })
       }
     })
+
 
     const firstStageInteractionFilter = (i) => ["updateTask", "deleteTask", "cancel"].includes(i.customId) && i.user.id === interaction.user.id;
     const firstStageInteractionCollector = interaction.channel.createMessageComponentCollector({ filter: firstStageInteractionFilter, time: 10_000 });
@@ -121,7 +139,7 @@ export default {
       if (i.customId === "updateTask") {
         await i.update({ content: "Updating task...", components: [updateTaskRow] });
       } else if (i.customId === "deleteTask") {
-        await i.update({ content: "Deleting task...", components: [] });
+        await i.update({ content: "Deleting task...", components: [deleteTaskRow] });
       } else if (i.customId === "cancel") {
         await i.update({ content: "Cancelled.", components: [], embeds: [] });
       }
@@ -129,7 +147,30 @@ export default {
 
     firstStageInteractionCollector.on("end", async (collected) => {
       if (!collected.size) {
-        await interaction.editReply("No action selected.");
+        await interaction.editReply({ content: "No action selected. Cancelling...", components: [], embeds: [] })
+      }
+    })
+
+    const deleteTaskFilter = (i) => ["confirmDelete", "cancelDelete"].includes(i.customId) && i.user.id === interaction.user.id;
+    const deleteTaskCollector = interaction.channel.createMessageComponentCollector({ filter: deleteTaskFilter, time: 10_000 });
+
+    deleteTaskCollector.on("collect", async (i) => {
+      if (i.customId === "confirmDelete") {
+        try {
+          await taskModel.findOneAndDelete({
+            guildID: interaction.guild.id,
+            department: departmentId,
+            task: i.message.embeds[0].fields[0].value,
+          }).then(async () => {
+            await i.update({ content: "✅ Task deleted.", embeds: [], components: [] })
+          })
+        }
+        catch (error) {
+          console.error(error);
+          return i.update({ content: "An error occurred while deleting the task.", components: [], embeds: [] });
+        }
+      } else if (i.customId === "cancelDelete") {
+        await i.update({ content: "Cancelled.", components: [], embeds: [] });
       }
     })
 
@@ -139,13 +180,77 @@ export default {
     updateTaskRowCollector.on("collect", async (i) => {
       if (i.customId === "updateTaskName") {
         await i.update({ content: "Updating task name...", components: [] });
+        await i.followUp("Please enter the new task name.");
       } else if (i.customId === "updateTaskDueDate") {
         await i.update({ content: "Updating task due date...", components: [] });
+        await i.followUp("Please enter the new task due date in the format `DD/MM/YYYY`.");
       } else if (i.customId === "updateTaskStatus") {
         await i.update({ content: "Updating task status...", components: [] });
+        await i.followUp({
+          content: "Select the new task status.",
+          components: [
+            new ActionRowBuilder()
+              .addComponents(
+                new ButtonBuilder()
+                  .setCustomId("completed")
+                  .setLabel("Completed")
+                  .setStyle(ButtonStyle.Success),
+                new ButtonBuilder()
+                  .setCustomId("pending")
+                  .setLabel("Pending Completion")
+                  .setStyle(ButtonStyle.Danger)
+              )
+          ]
+        });
+
+        // status collector
+        const statusFilter = (i) => ["completed", "pending"].includes(i.customId) && i.user.id === interaction.user.id;
+        const statusCollector = interaction.channel.createMessageComponentCollector({ filter: statusFilter, time: 10_000 });
+
+        statusCollector.on("collect", async (i) => {
+          if (i.customId === "completed") {
+            await taskModel.findOneAndUpdate({
+              guildID: interaction.guild.id,
+              department: departmentId,
+              task: tasks[taskIndex].task
+            }, { completed: true }).then(async () => {
+              await i.update({ content: "✅ Task status updated.", components: [] });
+            });
+          } else if (i.customId === "pending") {
+            await taskModel.findOneAndUpdate({
+              guildID: interaction.guild.id,
+              department: departmentId,
+              task: tasks[taskIndex].task
+            }, { completed: false }).then(async () => {
+              await i.update({ content: "✅ Task status updated.", components: [] });
+            });
+          }
+        })
       } else if (i.customId === "updateTaskPercentage") {
         await i.update({ content: "Updating task percentage...", components: [] });
       }
+    })
+
+    updateTaskRowCollector.on("end", async (collected) => {
+      if (!collected.size) {
+        await interaction.editReply({ content: "No action selected. Cancelling...", components: [], embeds: [] })
+      }
+    })
+
+    const nameFilter = (m) => m.author.id === interaction.user.id;
+    const nameCollector = interaction.channel.createMessageCollector({ filter: nameFilter, time: 20_000 });
+
+    nameCollector.on("collect", async (m) => {
+      if (m.content.length > 100) {
+        return m.channel.send("Task name cannot exceed 100 characters. Please try again.");
+      }
+      await taskModel.findOneAndUpdate({
+        guildID: interaction.guild.id,
+        department: departmentId,
+        task: tasks[taskIndex].task
+      }, { task: m.content }).then(async () => {
+        await m.channel.send("✅ Task name updated.");
+      });
     })
   }
 };

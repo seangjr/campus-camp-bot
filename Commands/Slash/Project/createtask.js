@@ -41,10 +41,7 @@ export default {
 
   run: async ({ client, interaction }) => {
     const department = interaction.options.getString("department");
-
-    if (!department || !settings.departments[department]) {
-      return interaction.reply("Please provide a valid department.");
-    }
+    const departmentId = settings.departments[department].roleId;
 
     const task = interaction.options.getString("task");
     const deadline = interaction.options.getString("deadline");
@@ -60,12 +57,11 @@ export default {
       return interaction.reply(`Task already exists for ${department}.`);
     }
 
-    new taskModel({
+    new taskModel({ // create a new task
       _id: new mongoose.Types.ObjectId(),
       guildID: interaction.guild.id,
       chatId: settings.departments[department].chatId,
-      roleId: settings.departments[department].roleId,
-      department,
+      department: departmentId,
       task,
       deadline,
       dateCreated: moment().toDate(),
@@ -77,7 +73,7 @@ export default {
 
     const embed = new EmbedBuilder()
       .setTitle("Task Created")
-      .setDescription(`✅ Task created for ${department}.`)
+      .setDescription(`✅ Task created for <@${departmentId}>.`)
       .addFields(
         {
           name: "Task",

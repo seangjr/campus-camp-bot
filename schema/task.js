@@ -2,9 +2,8 @@ import { Schema, model } from 'mongoose';
 const taskSchema = new Schema({
   _id: Schema.Types.ObjectId,
   guildID: String,
-  department: String,
+  department: String, // role id
   chatId: String,
-  roleId: String,
   task: String,
   dateCreated: Date,
   dateCompleted: Date,
