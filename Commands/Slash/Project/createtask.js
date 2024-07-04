@@ -73,7 +73,7 @@ export default {
 
     const embed = new EmbedBuilder()
       .setTitle("Task Created")
-      .setDescription(`✅ Task created for <@${departmentId}>.`)
+      .setDescription(`✅ Task created for <@&${departmentId}>.`)
       .addFields(
         {
           name: "Task",

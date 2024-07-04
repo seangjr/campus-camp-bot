@@ -226,8 +226,60 @@ export default {
             });
           }
         })
+
+        statusCollector.on("end", async (collected) => {
+          if (!collected.size) {
+            await interaction.editReply({ content: "No status selected. Cancelling...", components: [], embeds: [] })
+          }
+        })
       } else if (i.customId === "updateTaskPercentage") {
         await i.update({ content: "Updating task percentage...", components: [] });
+        await i.followUp({
+          content: "Please select the new completion percentage", components: [
+            new ActionRowBuilder().addComponents(
+              new ButtonBuilder()
+                .setCustomId("0")
+                .setLabel("0%")
+                .setStyle(ButtonStyle.Danger),
+              new ButtonBuilder()
+                .setCustomId("25")
+                .setLabel("25%")
+                .setStyle(ButtonStyle.Secondary),
+              new ButtonBuilder()
+                .setCustomId("50")
+                .setLabel("50%")
+                .setStyle(ButtonStyle.Secondary),
+              new ButtonBuilder()
+                .setCustomId("75")
+                .setLabel("75%")
+                .setStyle(ButtonStyle.Primary),
+              new ButtonBuilder()
+                .setCustomId("100")
+                .setLabel("100%")
+                .setStyle(ButtonStyle.Success)
+            )
+          ]
+        })
+
+        // percentage collector
+        const percentageFilter = (i) => ["0", "25", "50", "75", "100"].includes(i.customId) && i.user.id === interaction.user.id;
+        const percentageCollector = interaction.channel.createMessageComponentCollector({ filter: percentageFilter, time: 10_000 });
+
+        percentageCollector.on("collect", async (i) => {
+          await taskModel.findOneAndUpdate({
+            guildID: interaction.guild.id,
+            department: departmentId,
+            task: tasks[taskIndex].task
+          }, { percentageCompleted: parseInt(i.customId) }).then(async () => {
+            await i.update({ content: "✅ Task percentage updated.", components: [] });
+          });
+        })
+
+        percentageCollector.on("end", async (collected) => {
+          if (!collected.size) {
+            await interaction.editReply({ content: "No percentage selected. Cancelling...", components: [], embeds: [] })
+          }
+        })
       }
     })
 
