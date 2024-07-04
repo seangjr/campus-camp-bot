@@ -42,7 +42,7 @@ export default async function loadSlashCommands(client) {
     );
 
     // Register commands globally or in a specific guild
-    await client.on("ready", async () => {
+    client.on("ready", async () => {
       if (Global) {
         client.application.commands.set(allCommands);
       } else {

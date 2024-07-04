@@ -1,5 +1,6 @@
 import { ActivityType } from "discord.js";
 import { client } from "../bot.js";
+import mongoose from "mongoose";
 
 /**
  * Event listener for when the client becomes ready.
@@ -8,6 +9,17 @@ import { client } from "../bot.js";
  */
 client.on("ready", async () => {
   try {
+    // Login to the MongoDB database
+    // mongoose.set("strictQuery", false);
+    await mongoose.connect(process.env.MONGODB_URI || '', {
+    })
+    if (mongoose.connect) {
+      console.log("> ✅ Connected to the database");
+    }
+    else {
+      console.log("> ❌ Unable to connect to the database");
+    }
+
     // Log a message indicating that the client is ready
     console.log(`> ✅ ${client.user.tag} is now online`);
 
