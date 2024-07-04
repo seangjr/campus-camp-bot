@@ -5,10 +5,9 @@
   "main": "bot.js",
   "type": "module",
   "scripts": {
-    "start": "node bot.js",
-    "dev": "nodemon bot.js"
+    "start": "node bot.js"
   },
-  "author": "seangjr",
+  "author": "KABIRSINGH2004",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -53,14 +52,10 @@
     "discord bot example"
   ],
   "dependencies": {
-    "axios": "^1.7.2",
     "discord.js": "^14.14.1",
     "dotenv": "^16.4.5"
   },
   "engines": {
     "node": ">=16"
-  },
-  "devDependencies": {
-    "nodemon": "^3.1.0"
   }
 }

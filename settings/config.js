@@ -3,7 +3,7 @@ import { Colors } from "discord.js";
 const settings = {
   TOKEN: process.env.TOKEN || "Bot_Token",
   PREFIX: process.env.PREFIX || "BotPrefix",
-  Owners: ["832231777610629123"],
+  Owners: ["OwnersId", "OwnersId"],
   Slash: {
     Global: false,
     GuildID: process.env.GuildID || "Guild_Id",
