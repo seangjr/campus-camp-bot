@@ -26,7 +26,7 @@ export default {
     },
     {
       name: "task",
-      description: "The task to create.",
+      description: "The task to create. Case sensitive.",
       type: 3,
       required: true,
     },
@@ -53,6 +53,11 @@ export default {
 
     if (!moment(deadline, "DD/MM/YYYY").isValid()) {
       return interaction.reply("Please provide a valid deadline. (DD/MM/YYYY)");
+    }
+
+    // if the task name exists, then return
+    if (await taskModel.findOne({ guildID: interaction.guild.id, department, task })) {
+      return interaction.reply(`Task already exists for ${department}.`);
     }
 
     new taskModel({

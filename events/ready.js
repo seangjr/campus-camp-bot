@@ -25,8 +25,9 @@ client.on("ready", async () => {
 
     // Set the activity for the client
     client.user.setActivity({
-      name: `the timeline`, // Set the activity name
-      type: ActivityType.Watching, // Set the activity type
+      name: `seen code`, // Set the activity name
+      type: ActivityType.Streaming, // Set the activity type
+      url: "https://www.youtube.com/watch?v=xvFZjo5PgG0"
     });
   } catch (error) {
     // Log any errors that occur
@@ -38,3 +39,5 @@ client.on("ready", async () => {
  * Sets the bot's presence and activity when it becomes ready.
  * @module ReadyEvent
  */
+
+
