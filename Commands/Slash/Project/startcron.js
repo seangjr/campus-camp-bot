@@ -34,7 +34,7 @@ export default {
           for (const task of tasks) {
             const department = task.department;
             const channel = client.channels.cache.get(task.chatId)
-            await channel.send(`<${department}> you have a pending task\n\n :rotating_light: **Task**: ${task.task}\n :date: **Due Date**: ${moment(task.dueDate)}\n :warning: **Status**: ${task.completed ? "**Completed**" : "**Pending Completion**"}\n :white_check_mark: **Percentage Completed**: ${task.percentageCompleted}%`)
+            await channel.send(`<@&${department}> you have a pending task\n\n :rotating_light: **Task**: ${task.task}\n :date: **Due Date**: ${moment(task.dueDate)}\n :warning: **Status**: ${task.completed ? "**Completed**" : "**Pending Completion**"}\n :white_check_mark: **Percentage Completed**: ${task.percentageCompleted}%`)
           }
         }
       })

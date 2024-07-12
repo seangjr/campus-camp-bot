@@ -20,6 +20,9 @@ export default {
       cronStatus.value = false;
 
       interaction.reply({ content: "Cron job stopped", ephemeral: true });
+      // restart the discord bot
+      client.destroy();
+      client.build(process.env.TOKEN)
     }
     else {
       interaction.reply({ content: "Cron job is not running", ephemeral: true });
