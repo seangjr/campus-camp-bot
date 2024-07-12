@@ -1,5 +1,6 @@
 import "dotenv/config";
 import { Bot } from "./handlers/Client.js";
+import http from "http";
 
 /**
  * The client instance representing the bot.
@@ -14,6 +15,15 @@ client.build(client.config.TOKEN);
  * @module BotInitialization
  */
 
+const port = process.env.PORT || 3000;
+const requestListener = (req, res) => {
+  res.writeHead(200);
+  res.end("Bot is running.");
+};
+const server = http.createServer(requestListener);
+server.listen(port, () => {
+  console.log(`Server is running on port ${port}`);
+});
 
 // Handle uncaught exceptions
 process.on("uncaughtException", (error) => {
