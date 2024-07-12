@@ -2,6 +2,7 @@ import { ApplicationCommandType, EmbedBuilder, StringSelectMenuBuilder, StringSe
 import settings from "../../../settings/config.js";
 import { taskModel } from "../../../schema/task.js";
 import moment from "moment";
+import prettyMilliseconds from "pretty-ms";
 
 /**
  * @type {import("../../../index.js").Scommand}
@@ -103,7 +104,7 @@ export default {
     });
 
     const filter = (i) => i.customId === "task" && i.user.id === interaction.user.id; // filter for the select menu
-    const collector = interaction.channel.createMessageComponentCollector({ filter, time: 10_000 }); // 10 seconds
+    const collector = interaction.channel.createMessageComponentCollector({ filter, time: 30000 }); // 10 seconds
 
     let taskIndex;
 
@@ -133,7 +134,7 @@ export default {
 
 
     const firstStageInteractionFilter = (i) => ["updateTask", "deleteTask", "cancel"].includes(i.customId) && i.user.id === interaction.user.id;
-    const firstStageInteractionCollector = interaction.channel.createMessageComponentCollector({ filter: firstStageInteractionFilter, time: 20_000 });
+    const firstStageInteractionCollector = interaction.channel.createMessageComponentCollector({ filter: firstStageInteractionFilter, time: 30000 });
 
     firstStageInteractionCollector.on("collect", async (i) => {
       if (i.customId === "updateTask") {
@@ -152,7 +153,7 @@ export default {
     })
 
     const deleteTaskFilter = (i) => ["confirmDelete", "cancelDelete"].includes(i.customId) && i.user.id === interaction.user.id;
-    const deleteTaskCollector = interaction.channel.createMessageComponentCollector({ filter: deleteTaskFilter, time: 10_000 });
+    const deleteTaskCollector = interaction.channel.createMessageComponentCollector({ filter: deleteTaskFilter, time: 30000 });
 
     deleteTaskCollector.on("collect", async (i) => {
       if (i.customId === "confirmDelete") {
@@ -175,7 +176,7 @@ export default {
     })
 
     const updateTaskRowFilter = (i) => ["updateTaskName", "updateTaskDueDate", "updateTaskStatus", "updateTaskPercentage"].includes(i.customId) && i.user.id === interaction.user.id;
-    const updateTaskRowCollector = interaction.channel.createMessageComponentCollector({ filter: updateTaskRowFilter, time: 10_000 });
+    const updateTaskRowCollector = interaction.channel.createMessageComponentCollector({ filter: updateTaskRowFilter, time: 30000 });
 
     updateTaskRowCollector.on("collect", async (i) => {
       if (i.customId === "updateTaskName") {
@@ -183,7 +184,7 @@ export default {
         await i.followUp("Please enter the new task name.");
 
         const nameFilter = (m) => m.author.id === interaction.user.id;
-        const nameCollector = interaction.channel.createMessageCollector({ filter: nameFilter, time: 20_000 });
+        const nameCollector = interaction.channel.createMessageCollector({ filter: nameFilter, time: 30000 });
 
         nameCollector.on("collect", async (m) => {
           try {
@@ -214,7 +215,7 @@ export default {
         await i.followUp("Please enter the new task due date in `DD/MM/YYYY`.");
 
         const dueDateFilter = (m) => m.author.id === interaction.user.id;
-        const dueDateCollector = interaction.channel.createMessageCollector({ filter: dueDateFilter, time: 20_000 });
+        const dueDateCollector = interaction.channel.createMessageCollector({ filter: dueDateFilter, time: 30000 });
 
         dueDateCollector.on("collect", async m => {
           try {
@@ -263,7 +264,7 @@ export default {
 
         // status collector
         const statusFilter = (i) => ["completed", "pending"].includes(i.customId) && i.user.id === interaction.user.id;
-        const statusCollector = interaction.channel.createMessageComponentCollector({ filter: statusFilter, time: 10_000 });
+        const statusCollector = interaction.channel.createMessageComponentCollector({ filter: statusFilter, time: 30000 });
 
         statusCollector.on("collect", async (i) => {
           if (i.customId === "completed") {
@@ -321,7 +322,7 @@ export default {
 
         // percentage collector
         const percentageFilter = (i) => ["0", "25", "50", "75", "100"].includes(i.customId) && i.user.id === interaction.user.id;
-        const percentageCollector = interaction.channel.createMessageComponentCollector({ filter: percentageFilter, time: 10_000 });
+        const percentageCollector = interaction.channel.createMessageComponentCollector({ filter: percentageFilter, time: 30000 });
 
         percentageCollector.on("collect", async (i) => {
           await taskModel.findOneAndUpdate({
@@ -346,5 +347,11 @@ export default {
         await interaction.editReply({ content: "No action selected. Cancelling...", components: [], embeds: [] })
       }
     })
+
+    const googleSheetsLinkButton = new ButtonBuilder()
+      .setLabel("Google Sheets Link")
+      .setStyle(ButtonStyle.Link)
+      .setURL("https://docs.google.com/spreadsheets/d/1pBSD3s05hmIN7GLrTbwA5E9MOfB8AmNGAUkgSaeWO_E/edit?usp=sharing");
+    await interaction.followUp({ content: "Make sure to update the google sheets as well for the changes to reflect.", components: [new ActionRowBuilder().addComponents(googleSheetsLinkButton)] });
   }
 };
