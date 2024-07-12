@@ -17,6 +17,10 @@ const settings = {
     error: "❌",
   },
   departments: {
+    general: {
+      chatId: "1239603351994236996",
+      roleId: "1239606239965745272"
+    },
     logistics: {
       chatId: "1243034018971385887",
       roleId: "1239605985002127382",

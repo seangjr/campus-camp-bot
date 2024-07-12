@@ -14,6 +14,7 @@ client.build(client.config.TOKEN);
  * @module BotInitialization
  */
 
+
 // Handle uncaught exceptions
 process.on("uncaughtException", (error) => {
   console.error("An uncaught exception occurred:", error);

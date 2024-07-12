@@ -45,7 +45,10 @@ export default {
             Object.entries(settings.departments).map(([key, value]) => ({
               // format the key to title case and add space if needed
               name: key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1').trim(),
-              value: tasks.filter((task) => task.department === value.roleId).map((task) => `🚨 **${task.task}**\n📅 Due **${moment(task.dueDate).fromNow()}**\n⚠️ Status: ${task.completed ? "**Completed**" : "**Pending Completion**"}\n✅ Percentage Completed: **${task.percentageCompleted}%**`).join("\n\n") || "No tasks",
+              value: tasks
+                .filter((task) => task.department === value.roleId && !task.completed) // filter out completed tasks
+                .map((task) => `🚨 **${task.task}**\n📅 Due **${moment(task.dueDate).fromNow()}**\n⚠️ Status: ${task.completed ? "**Completed**" : "**Pending Completion**"}\n✅ Percentage Completed: **${task.percentageCompleted}%**`)
+                .join("\n\n") || "No tasks",
             }))
           )
           .setColor("Random");
@@ -64,11 +67,12 @@ export default {
         const embed = new EmbedBuilder()
           .setTitle(`${departmentTitle} Tasks`)
           .addFields(
-            tasks.map((task) => ({
-              name: task.task,
-              value: `📅 Due **${moment(task.dueDate).fromNow()}**\n⚠️ Status: ${task.completed ? "**Completed**" : "**Pending Completion**"}\n✅ Percentage Completed: **${task.percentageCompleted}%**`,
-
-            }))
+            tasks
+              .filter(task => !task.completed)
+              .map((task) => ({
+                name: task.task,
+                value: `📅 Due **${moment(task.dueDate).fromNow()}**\n⚠️ Status: ${task.completed ? "**Completed**" : "**Pending Completion**"}\n✅ Percentage Completed: **${task.percentageCompleted}%**`,
+              }))
           )
           .setColor("Random");
 

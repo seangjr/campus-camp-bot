@@ -133,7 +133,7 @@ export default {
 
 
     const firstStageInteractionFilter = (i) => ["updateTask", "deleteTask", "cancel"].includes(i.customId) && i.user.id === interaction.user.id;
-    const firstStageInteractionCollector = interaction.channel.createMessageComponentCollector({ filter: firstStageInteractionFilter, time: 10_000 });
+    const firstStageInteractionCollector = interaction.channel.createMessageComponentCollector({ filter: firstStageInteractionFilter, time: 20_000 });
 
     firstStageInteractionCollector.on("collect", async (i) => {
       if (i.customId === "updateTask") {
@@ -181,9 +181,67 @@ export default {
       if (i.customId === "updateTaskName") {
         await i.update({ content: "Updating task name...", components: [] });
         await i.followUp("Please enter the new task name.");
+
+        const nameFilter = (m) => m.author.id === interaction.user.id;
+        const nameCollector = interaction.channel.createMessageCollector({ filter: nameFilter, time: 20_000 });
+
+        nameCollector.on("collect", async (m) => {
+          try {
+            await taskModel.findOneAndUpdate({
+              guildID: interaction.guild.id,
+              department: departmentId,
+              task: tasks[taskIndex].task,
+            }, {
+              task: m.content,
+            }).then(async () => {
+              await m.delete();
+              await i.update({ content: "✅ Task name updated.", components: [], embeds: [] });
+            })
+          }
+          catch (error) {
+            console.error(error);
+            return i.update({ content: "An error occurred while updating the task name.", components: [], embeds: [] });
+          }
+        })
+
+        nameCollector.on("end", async (collected) => {
+          if (!collected.size) {
+            await interaction.editReply({ content: "No task name entered. Cancelling...", components: [], embeds: [] })
+          }
+        })
       } else if (i.customId === "updateTaskDueDate") {
         await i.update({ content: "Updating task due date...", components: [] });
-        await i.followUp("Please enter the new task due date in the format `DD/MM/YYYY`.");
+        await i.followUp("Please enter the new task due date in `DD/MM/YYYY`.");
+
+        const dueDateFilter = (m) => m.author.id === interaction.user.id;
+        const dueDateCollector = interaction.channel.createMessageCollector({ filter: dueDateFilter, time: 20_000 });
+
+        dueDateCollector.on("collect", async m => {
+          try {
+            await taskModel.findOneAndUpdate({
+              guildID: interaction.guild.id,
+              department: departmentId,
+              task: tasks[taskIndex].task,
+            }, {
+              dueDate: moment(m.content, "DD/MM/YYYY").toDate()
+            }).then(async () => {
+              await m.delete();
+              await i.update({ content: "✅ Task due date updated.", components: [], embeds: [] });
+            })
+          }
+          catch (error) {
+            console.error(error);
+            return i.update({ content: "An error occurred while updating the task due date.", components: [], embeds: [] });
+          }
+        })
+
+        dueDateCollector.on("end", async (collected) => {
+          if (!collected.size) {
+            await interaction.editReply({ content: "No task due date entered. Cancelling...", components: [], embeds: [] })
+          }
+        })
+
+        // while the collector is active
       } else if (i.customId === "updateTaskStatus") {
         await i.update({ content: "Updating task status...", components: [] });
         await i.followUp({
@@ -287,22 +345,6 @@ export default {
       if (!collected.size) {
         await interaction.editReply({ content: "No action selected. Cancelling...", components: [], embeds: [] })
       }
-    })
-
-    const nameFilter = (m) => m.author.id === interaction.user.id;
-    const nameCollector = interaction.channel.createMessageCollector({ filter: nameFilter, time: 20_000 });
-
-    nameCollector.on("collect", async (m) => {
-      if (m.content.length > 100) {
-        return m.channel.send("Task name cannot exceed 100 characters. Please try again.");
-      }
-      await taskModel.findOneAndUpdate({
-        guildID: interaction.guild.id,
-        department: departmentId,
-        task: tasks[taskIndex].task
-      }, { task: m.content }).then(async () => {
-        await m.channel.send("✅ Task name updated.");
-      });
     })
   }
 };

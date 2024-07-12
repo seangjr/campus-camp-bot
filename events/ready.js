@@ -25,7 +25,7 @@ client.on("ready", async () => {
 
     // Set the activity for the client
     client.user.setActivity({
-      name: `seen code`, // Set the activity name
+      name: `Summer Things`, // Set the activity name
       type: ActivityType.Streaming, // Set the activity type
       url: "https://www.youtube.com/watch?v=xvFZjo5PgG0"
     });
